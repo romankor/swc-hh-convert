@@ -484,7 +484,7 @@
         hh += "The button is in seat #" + buttonSeatNum + "\n";
         hh += "*** HOLE CARDS ***\n";
         if (h.dealtTo) {
-            hh += "Dealt to " + h.dealtTo.player + " [" + h.dealtTo.holeCard1 + " " + h.dealtTo.holeCard2 + "]\n"; //todo change this to any players name not just mine
+            hh += "Dealt to " + h.dealtTo.player + " [" + h.dealtTo.holeCards + "]\n";
         }
         hh += actions(h.preflopActions);
     
