@@ -11,13 +11,21 @@ var Tail = require('tail').Tail;
 var readline = require('readline');
 var convert = require('./swcConvert.js');
 
-var hhDir = process.argv[2]; 
+var hhDir = process.argv[2];
+var outputDir = process.argv[3];
+var bcr = process.argv[4];
 
 if (!hhDir) {
 	sys.puts("You must provide the swc hand history directory as the first argument.");
     process.exit(1);
 }
 
+if (!outputDir) {
+	sys.puts("You must provide the output directory as the second argument.");
+    process.exit(1);
+}
+
+console.log("WRITING TO", outputDir)
 var tail;
 
 /**
@@ -25,13 +33,15 @@ var tail;
 */
 var existingFiles = fs.readdirSync(hhDir);
 for (var i = 0; i < existingFiles.length; i++) {
+	var file_n = existingFiles[i];
 	var rd = readline.createInterface({
     	input: fs.createReadStream(path.join(hhDir, existingFiles[i])),
     	output: process.stdout,
     	terminal: false
     });
+
 	rd.on("line", function(data) {
-		bufferTillRake(data);
+		bufferTillRake(data, file_n);
 	});
 }
 
@@ -43,7 +53,7 @@ fs.watch(hhDir, function(event, filename) {
 	if (filename && event == 'rename') {
 		tail = new Tail(path.join(hhDir, filename));
 		tail.on("line", function(data) {
-			bufferTillRake(data);
+			bufferTillRake(data, filename);
 		});
 	}
 });
@@ -55,12 +65,18 @@ fs.watch(hhDir, function(event, filename) {
 * it is sent along to another function for processing.
 */
 var hand = "";
-function bufferTillRake(data) {
+function bufferTillRake(data, filename) {
 	hand += "\n" + data;
 	if (data.substr(0,6) == "Rake (") {
 		hand += "\n\n";
 		var convertedHand = convert.convert(hand, 1);
-		console.log(convertedHand);
+		fs.appendFile(path.join(outputDir, filename), convertedHand, function(err) {
+    		if(err) {
+        		console.log(err);
+    		} else {
+        		//console.log("The file was saved!");
+    		}
+		});
 		hand = ""
 	}
 }

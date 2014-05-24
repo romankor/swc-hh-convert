@@ -664,11 +664,11 @@
             }
             handArr = parse(data);
     
-            fullTiltHH = '\n\n';
+            fullTiltHH = '';
             for (i = 0; i < handArr.length; i++) {
                 thisHandHistory = format(handArr[i]);
                 if (thisHandHistory) {
-                    fullTiltHH += thisHandHistory + '\n\n\n';
+                    fullTiltHH += thisHandHistory + '\n\n';
                 }
             }
             return fullTiltHH;
