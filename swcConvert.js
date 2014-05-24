@@ -410,6 +410,12 @@
                 hh += showsInfo;
                 break;
 
+            case 'dealtTo':
+                hh += "Dealt to " + actionObj[i].player + " [" + actionObj[i].holeCards + "]\n";
+                break;
+
+
+
             default:
             }
         }
