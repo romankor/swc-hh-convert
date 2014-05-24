@@ -447,6 +447,8 @@
             gameType = "No Limit Hold'em";
         } else if (h.gameInfo.gameName === "Limit Hold'em") {
             gameType = "Limit Hold'em";
+        } else if (h.gameInfo.gameName === "PL Omaha") {
+            gameType = "Pot Limit Omaha";
         } else {
             return false;
         }
