@@ -5,9 +5,12 @@
 */
 var sys = require("sys");  
 var fs = require('fs');
+var path = require('path');
 var request = require('request');
 var Tail = require('tail').Tail;
+var readline = require('readline');
 var convert = require('./swcConvert.js');
+
 var hhDir = process.argv[2]; 
 
 if (!hhDir) {
@@ -22,8 +25,12 @@ var tail;
 */
 var existingFiles = fs.readdirSync(hhDir);
 for (var i = 0; i < existingFiles.length; i++) {
-	tail = new Tail(hhDir + "\\" + existingFiles[i]);
-	tail.on("line", function(data) {
+	var rd = readline.createInterface({
+    	input: fs.createReadStream(path.join(hhDir, existingFiles[i])),
+    	output: process.stdout,
+    	terminal: false
+    });
+	rd.on("line", function(data) {
 		bufferTillRake(data);
 	});
 }
@@ -34,7 +41,7 @@ for (var i = 0; i < existingFiles.length; i++) {
 */
 fs.watch(hhDir, function(event, filename) {	
 	if (filename && event == 'rename') {
-		tail = new Tail(hhDir + "\\" + filename);
+		tail = new Tail(path.join(hhDir, filename));
 		tail.on("line", function(data) {
 			bufferTillRake(data);
 		});
@@ -53,7 +60,7 @@ function bufferTillRake(data) {
 	if (data.substr(0,6) == "Rake (") {
 		hand += "\n\n";
 		var convertedHand = convert.convert(hand, 1);
-		console.log(convertedHand);
-	} 
+		console.log(">>", convertedHand);
+	}
 }
 
