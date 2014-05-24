@@ -60,7 +60,8 @@ function bufferTillRake(data) {
 	if (data.substr(0,6) == "Rake (") {
 		hand += "\n\n";
 		var convertedHand = convert.convert(hand, 1);
-		console.log(">>", convertedHand);
+		console.log(convertedHand);
+		hand = ""
 	}
 }
 

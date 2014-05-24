@@ -69,7 +69,7 @@
             mainPotShowDown: {regex: /^\*\* Main Pot Show Down \*\* \[([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+)\]/,
                                data: ['board'],
                              action: true},
-            shows:           {regex: /^(.*) shows \[([\w\d]+ [\w\d]+)\] \((.*)\)/,
+            shows:           {regex: /^(.*) shows \[(.*)\] \((.*)\)/,
                                data: ['player', 'cards', 'hand'],
                              action: true},
             winsPotWithHand: {regex: /^(.*) wins Pot \((.*)\) with (.*)/,
