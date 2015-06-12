@@ -8,13 +8,14 @@
     "seal with clubs",
     "bitcoin",
     "poker",
-	"hand history converter"
+    "hand history converter"
   ],
-  "dependencies" : {
-    "request"   :  "*",
-	"tail"   :  "*"
+  "dependencies": {
+    "request": "*",
+    "tail": "*",
+    "underscore" : "*"
   },
-   "repository": {
+  "repository": {
     "type": "git",
     "url": "https://github.com/jeffslofish/swc-hh-convert.git"
   }
