@@ -1,7 +1,7 @@
 swc-hh-convert
 ==============
 
-Seals With Clubs (Bitcoin Poker) Hand History Converter to Full-Tilt Format
+Taken from Seals with Clubs ( but fits a lot of web poker platforms)  Hand History Converter to Full-Tilt Format
 
 
 Requirements: nodejs
@@ -13,4 +13,4 @@ First, run `npm install`, then
 
 `node swcWatch.js path-to-swc-hh-files > out.txt`
 
-For inquiries, email jeffslofish@gmail.com
+For inquiries, email kournjaev@gmail.com
