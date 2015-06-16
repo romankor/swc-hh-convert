@@ -31,6 +31,7 @@ var hands = {};
 function convertFromFile(fileName) {
     console.log('converting file ' + file_n);
     hands[fileName] = "";
+    hands[fileName + 'inHand'] = false;
     var lines = fs.readFileSync(path.join(hhDir, fileName)).toString().split('\n');
     _.each(lines, function (line) {
         bufferTillRake(line.toString(), this.toString())
@@ -72,11 +73,14 @@ fs.watch(hhDir, function (event, filename) {
  * it is sent along to another function for processing.
  */
 function bufferTillRake(data, filename) {
-    hands[filename] = hands[filename] + "\n" + data;
-    if (data.substr(0, 6) == "Rake (") {
-        hands[filename] = hands[filename] + "\n\n";
+    if (data.substr(0, 6) == "Hand #")
+        hands[filename+'inHand'] = true;
+
+    hands[filename] += "\n" + data;
+
+    if (hands[filename+'inHand'] == true && data.trim() == "") {
         try {
-            var convertedHand = convert.convert(hands[filename], 1);
+            var convertedHand = convert.convert(hands[filename], 1) + "\n\n";
             fs.appendFile(path.join(outputDir, filename), convertedHand, function (err) {
                 if (err) {
                     console.log(err);
@@ -84,6 +88,8 @@ function bufferTillRake(data, filename) {
                     //console.log("The file was saved!");
                 }
             });
+            //console.log(convertedHand);
+            hands[filename+'inHand'] = false;
         } catch (e) {
             console.log(e);
             console.log('Could not convert hand : \n ' + data);

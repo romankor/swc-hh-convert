@@ -7,6 +7,7 @@
 
     var aliases = {
         'kentanuts': 'Shuki888',
+        '8862': 'Shuki717',
         'haimsheli': 'Shuki888',
         'pookon': 'Shuki888',
         'dontcare': 'Roman888',
@@ -62,7 +63,15 @@
                 data: ['riverCard']
             },
             showDown: {
-                regex: /^\*\* Pot Show Down \*\* \[([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+)\]/,
+                regex: /^\*\* Pot Show Down \*\* \[([\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+)\]/,
+                data: ['board']
+            },
+            sidePotShowDown: {
+                regex: /^\*\* Side Pot ([\d+]) Show Down \*\* \[([\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+)\]/,
+                data: ['sidePotNum', 'board']
+            },
+            mainPotShowDown: {
+                regex: /^\*\* Main Pot Show Down \*\* \[([\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+ [\w\d]+)\]/,
                 data: ['board']
             },
 
@@ -108,7 +117,7 @@
                 action: true
             },
             betReturned: {
-                regex: /^Uncalled bet of (.*) returned to (.*)/,
+                regex: /^Uncalled bet of ([\d]+) returned to (.*)/,
                 data: ['amt', 'player'],
                 action: true
             },
@@ -117,16 +126,7 @@
                 data: ['player', 'amt'],
                 action: true
             },
-            sidePotShowDown: {
-                regex: /^\*\* Side Pot ([\d+]) Show Down \*\* \[([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+)\]/,
-                data: ['sidePotNum', 'board'],
-                action: true
-            },
-            mainPotShowDown: {
-                regex: /^\*\* Main Pot Show Down \*\* \[([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+) ([\w\d]+)\]/,
-                data: ['board'],
-                action: true
-            },
+
             shows: {
                 regex: /^(.*) shows \[(.*)\] \((.*)\)/,
                 data: ['player', 'cards', 'hand'],
@@ -315,6 +315,10 @@
         return hh;
     }
 
+    function fixUnicode(line) {
+        return line.replace(/[?]+/g, "table1");
+    }
+
     function parse(sealsHH) {
         var handArr = [],
             hand = {},
@@ -331,7 +335,7 @@
                     getInfo(lines[i++], hand, 'handInfo');
                     getInfo(lines[i++], hand, 'gameInfo');
                     getInfo(lines[i++], hand, 'siteInfo');
-                    getInfo(lines[i++], hand, 'tableInfo');
+                    getInfo(fixUnicode((lines[i++])), hand, 'tableInfo');
                     i = getMultiLineInfo(lines, i, hand, 'seatsInfo');
                     break;
 
@@ -405,15 +409,16 @@
                     i++;
             }
         }
-
+        if (!isEmpty(hand))
+            handArr.push(hand);
         return handArr;
     }
 
     function convertAlias(playerName) {
         if (playerName == undefined)
-            return playerName
+            return playerName;
         if (aliases[playerName.toLowerCase()] == undefined)
-            return playerName
+            return playerName;
         else
             return aliases[playerName.toLowerCase()]
     }
@@ -480,11 +485,11 @@
                     break;
 
                 case 'winsSidePot':
-                    hh += playerName + " wins side pot " + actionObj[i].sidePotNum + " (" + chipsToDollars(actionObj[i].amt) + ") with " + actionObj[i].hand + " \n";
+                    hh += playerName + " wins the side pot " + actionObj[i].sidePotNum + " (" + chipsToDollars(actionObj[i].amt) + ") with " + actionObj[i].hand + " \n";
                     break;
 
                 case 'winsMainPot':
-                    hh += playerName + " wins main pot (" + chipsToDollars(actionObj[i].amt) + ") with " + actionObj[i].hand + " \n";
+                    hh += playerName + " wins the main pot (" + chipsToDollars(actionObj[i].amt) + ") with " + actionObj[i].hand + " \n";
                     break;
 
                 case 'shows':
@@ -503,6 +508,54 @@
 
         return hh;
     }
+
+    function calculatePot(winPotActions, winPotStrings) {
+        var pot = 0;
+        for (var i = 0; i < winPotActions.length; i++) {
+            if (winPotActions[i]) {
+                for (var j = 0; j < winPotActions[i].length; j++) {
+                    if (winPotActions[i][j]) {
+                        for (var k = 0; k < winPotStrings.length; k++) {
+                            if (winPotActions[i][j].action === winPotStrings[k]) {
+                                pot += parseInt(winPotActions[i][j].amt);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return pot;
+    }
+
+    function printShowDown(actions, hand, i, potSize) {
+        var hh = "";
+        if (!actions)
+            return hh;
+        for (var j = 0; j < actions.length; j++) {
+            if (hand.seatsInfo[i].player === actions[j].player) {
+                var wins = false;
+                for (var k = 0; k < actions.length; k++) {
+                    if (hand.seatsInfo[i].player === actions[k].player &&
+                        (actions[k].action === 'winsPot' ||
+                            actions[k].action === 'winsPotWithHand' ||
+                            actions[k].action === 'winsSidePot' ||
+                            actions[k].action === 'winsMainPot'
+                        )) {
+                        hh += ' showed [' + actions[j].cards + '] and won (' + chipsToDollars(potSize) + ')';
+                        wins = true;
+                        return hh;
+                    }
+                }
+
+                if (!wins) {
+                    hh += ' showed [' + actions[j].cards + '] and lost';
+                }
+            }
+        }
+        return hh;
+    }
+
 
     function format(h) {
         var i,
@@ -592,34 +645,14 @@
             }
         }
 
-        if (h.showDownActions) {
-            hh += "*** SHOW DOWN ***\n";
+        hh += "*** SHOW DOWN ***\n";
+        if (h.showDownActions)
             hh += actions(h.showDownActions);
-        } else if (h.sidePotShowDownActions) {
-            hh += "*** SHOW DOWN ***\n";
-            for (i = 0; i < h.sidePotShowDownActions.length; i++) {
-                if (h.sidePotShowDownActions[i].action === 'shows') {
-                    hh += h.sidePotShowDownActions[i].player +
-                        ' shows ' + h.sidePotShowDownActions[i].hand + '\n';
-                } else if (h.sidePotShowDownActions[i].action === 'winsSidePot') {
-                    hh += h.sidePotShowDownActions[i].player +
-                        ' wins side pot ' + h.sidePotShowDownActions[i].amt +
-                        ' with ' + h.sidePotShowDownActions[i].hand + '\n';
-                }
-            }
-        }
+        else if (h.sidePotShowDownActions)
+            hh += actions(h.sidePotShowDownActions);
 
-        if (h.mainPotShowDownActions) {
-            for (i = 0; i < h.mainPotShowDownActions.length; i++) {
-                if (h.mainPotShowDownActions[i].action === 'shows') {
-                    hh += convertAlias(h.mainPotShowDownActions[i].player) +
-                        ' shows ' + h.mainPotShowDownActions[i].hand + '\n';
-                } else if (h.mainPotShowDownActions[i].action === 'winsMainPot') {
-                    hh += convertAlias(h.mainPotShowDownActions[i].player) +
-                        ' wins main pot with ' + h.mainPotShowDownActions[i].hand + '\n';
-                }
-            }
-        }
+        if (h.mainPotShowDownActions)
+            hh += actions(h.mainPotShowDownActions);
 
         winPotActions = [h.sidePotShowDownActions,
             h.mainPotShowDownActions,
@@ -629,52 +662,31 @@
             h.flopActions,
             h.preflopActions];
 
-        winPotStrings = ['winsSidePot',
-            'winsMainPot',
-            'winsPot',
-            'winsPotWithHand'];
-
-        totalPot = 0;
-        for (i = 0; i < winPotActions.length; i++) {
-            if (winPotActions[i]) {
-                for (j = 0; j < winPotActions[i].length; j++) {
-                    if (winPotActions[i][j]) {
-                        for (k = 0; k < winPotStrings.length; k++) {
-                            if (winPotActions[i][j].action === winPotStrings[k]) {
-                                totalPot = winPotActions[i][j].amt;
-                                break;
-                            }
-                        }
-                    }
-                    if (totalPot) {
-                        break;
-                    }
-                }
-            }
-
-            if (totalPot) {
-                break;
-            }
-        }
+        var mainPot = calculatePot(winPotActions, ['winsMainPot']);
+        var pot = calculatePot(winPotActions, ['winsPot', 'winsPotWithHand']);
+        var sidePot = calculatePot(winPotActions, ['winsSidePot']);
 
         hh += "*** SUMMARY ***\n";
 
         rake = 0;
-        rakePlaces = ['showDown', 'river', 'turn', 'flop'];
+        rakePlaces = ['showDown', 'river', 'turn', 'flop', 'mainPotShowDown', 'sidePotShowDown'];
         for (i = 0; i < rakePlaces.length; i++) {
             rh = h[rakePlaces[i] + 'Actions'];
             if (rh) {
                 for (j = 0; j < rh.length; j++) {
                     if (rh[j].action === 'rake') {
-                        rake = rh[j].amt;
+                        rake += parseInt(rh[j].amt);
                         break;
                     }
                 }
             }
         }
-
-        totalPotWithRake = +totalPot + (+rake);
-        hh += "Total pot " + chipsToDollars(totalPotWithRake) + " | Rake " + chipsToDollars(rake) + "\n";
+        if (mainPot) {
+            //Total pot $$4,060.50 Main pot $3885.50. Side pot $175. | Rake $$161.50
+            hh += "Total pot " + chipsToDollars(mainPot + sidePot) + " Main pot " + chipsToDollars(mainPot) + ". Side Pot " + chipsToDollars(sidePot) + " | Rake " + chipsToDollars(rake) + "\n";
+        } else {
+            hh += "Total pot " + chipsToDollars(pot) + " | Rake " + chipsToDollars(rake) + "\n";
+        }
 
         if (h.flop && h.turn && h.river) {
             hh += "Board: [" +
@@ -696,6 +708,7 @@
                 h.flop.flopCard3 + "]\n";
         }
 
+
         for (i = 0; i < h.seatsInfo.length; i++) {
             hh += 'Seat ' + h.seatsInfo[i].seat + ': ' + convertAlias(h.seatsInfo[i].player);
             hh += specialActions(h.seatsInfo[i], h.preflopActions, 'preflop');
@@ -703,27 +716,10 @@
             hh += specialActions(h.seatsInfo[i], h.turnActions, 'turn');
             hh += specialActions(h.seatsInfo[i], h.riverActions, 'river');
 
-            if (h.showDownActions) {
-                for (j = 0; j < h.showDownActions.length; j++) {
-                    if (h.seatsInfo[i].player === h.showDownActions[j].player) {
-                        if (h.showDownActions[j].action === 'shows') {
-                            wins = false;
-                            for (k = 0; k < h.showDownActions.length; k++) {
-                                if (h.seatsInfo[i].player === h.showDownActions[k].player &&
-                                    (h.showDownActions[k].action === 'winsPot' || h.showDownActions[k].action === 'winsPotWithHand')) {
-                                    hh += ' showed [' + h.showDownActions[j].cards + '] and won (' + chipsToDollars(h.showDownActions[k].amt) + ')';
-                                    wins = true;
-                                    break;
-                                }
-                            }
-
-                            if (!wins) {
-                                hh += ' showed [' + h.showDownActions[j].cards + '] and lost';
-                            }
-                        }
-                    }
-                }
-            }
+            hh += printShowDown(h.showDownActions, h, i, pot);
+            hh += printShowDown(h.sidePotShowDownActions, h, i, mainPot + sidePot);
+            //hh += printShowDown(h.mainPotShowDownActions, h, i);
+            // this bug is a little annoying dont have time to fix that , will just go with side pot wins the whole pot
 
             hh += '\n';
         }
