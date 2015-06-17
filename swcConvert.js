@@ -91,6 +91,11 @@
             /*** end  multiline ***/
 
             /*** begin special actions ***/
+            timesOut: {
+                regex: /^(.*) has timed out/,
+                data: ['player'],
+                action: true
+            },
             folds: {
                 regex: /^(.*) folds/,
                 data: ['player'],
@@ -240,6 +245,11 @@
         while (true) {
             actionObj = {};
             lineType = getLineType(lines[i]);
+            if (lineType === 'timesOut') {
+                i++;
+                continue;
+            }
+
             if (lineType === 'unknown') {
                 i++;
                 break;
