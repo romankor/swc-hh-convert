@@ -32,10 +32,15 @@ function convertFromFile(fileName) {
     console.log('converting file ' + file_n);
     hands[fileName] = "";
     hands[fileName + 'inHand'] = false;
-    var lines = fs.readFileSync(path.join(hhDir, fileName)).toString().split('\n');
-    _.each(lines, function (line) {
-        bufferTillRake(line.toString(), this.toString())
-    }, fileName);
+    try {
+        var lines = fs.readFileSync(path.join(hhDir, fileName)).toString().split('\n');
+        _.each(lines, function (line) {
+            bufferTillRake(line.toString(), this.toString())
+        }, fileName);
+    } catch (e) {
+        console.log(e);
+    }
+
 }
 
 var existingFiles = fs.readdirSync(hhDir);
@@ -74,11 +79,11 @@ fs.watch(hhDir, function (event, filename) {
  */
 function bufferTillRake(data, filename) {
     if (data.substr(0, 6) == "Hand #")
-        hands[filename+'inHand'] = true;
+        hands[filename + 'inHand'] = true;
 
     hands[filename] += "\n" + data;
 
-    if (hands[filename+'inHand'] == true && data.trim() == "") {
+    if (hands[filename + 'inHand'] == true && data.trim() == "") {
         try {
             var convertedHand = convert.convert(hands[filename], 1) + "\n\n";
             fs.appendFile(path.join(outputDir, filename), convertedHand, function (err) {
@@ -89,7 +94,7 @@ function bufferTillRake(data, filename) {
                 }
             });
             //console.log(convertedHand);
-            hands[filename+'inHand'] = false;
+            hands[filename + 'inHand'] = false;
         } catch (e) {
             console.log(e);
             console.log('Could not convert hand : \n ' + data);
