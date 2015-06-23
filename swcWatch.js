@@ -8,7 +8,6 @@ var fs = require('fs');
 var path = require('path');
 var convert = require('./swcConvert.js');
 var _ = require('underscore')._;
-
 var hhDir = process.argv[2];
 var outputDir = process.argv[3];
 
@@ -23,48 +22,61 @@ if (!outputDir) {
     process.exit(1);
 }
 
-console.log("WRITING TO", outputDir)
+console.log("WRITING TO", outputDir);
 var hands = {};
 /**
  * Tail all existing files in hh directory
  */
-function convertFromFile(fileName) {
-    console.log('converting file ' + file_n);
-    hands[fileName] = "";
-    hands[fileName + 'inHand'] = false;
-    try {
-        var lines = fs.readFileSync(path.join(hhDir, fileName)).toString().split('\n');
-        _.each(lines, function (line) {
-            bufferTillRake(line.toString(), this.toString())
-        }, fileName);
-    } catch (e) {
-        console.log(e);
-    }
 
-}
-
-var existingFiles = fs.readdirSync(hhDir);
 var convertedFiles = fs.readdirSync(outputDir);
 
-for (var i = 0; i < existingFiles.length; i++) {
-    var file_n = existingFiles[i];
-
-    if (file_n.match(/[^\\/]+\.txt$/) == null)
-        continue;
-    if (convertedFiles.indexOf(file_n) != -1) {
-        console.log('file ' + file_n + ' already converted');
-        continue;
-    }
-
-    convertFromFile(file_n);
-
+// Read all files in the folder in parallel.
+function convertFile(fileName) {
+    fs.readFile(path.join(hhDir, fileName), {encoding: 'UTF-8'}, function (error, data) {
+        if (error) {
+            console.log("Error: ", error);
+        } else {
+            var lines = data.split('\n');
+            _.each(lines, function (line) {
+                bufferTillRake(line.toString(), fileName)
+            });
+            console.log("Successfully converted file " + fileName);
+        }
+    });
 }
+fs.readdir(hhDir, function (err, files) {
+    if (err) {
+        console.log("Error reading files: ", err);
+    } else {
+        // keep track of how many we have to go.
+        var remaining = files.length;
+        var totalBytes = 0;
+
+        if (remaining == 0) {
+            console.log("Done reading files. totalBytes: " +
+                totalBytes);
+        }
+
+        // for each file,
+        for (var i = 0; i < files.length; i++) {
+            if (files[i].match(/[^\\/]+\.txt$/) == null)
+                continue;
+
+            if (convertedFiles.indexOf(files[i]) != -1) {
+                console.log('file ' + files[i] + ' already converted');
+                continue;
+            }
+            // read its contents.
+            convertFile(files[i]);
+        }
+    }
+});
 
 
 fs.watch(hhDir, function (event, filename) {
     if (filename && event == 'rename') {
         try {
-            convertFromFile(filename)
+            convertFile(filename)
         } catch (e) {
             console.log(e)
         }
