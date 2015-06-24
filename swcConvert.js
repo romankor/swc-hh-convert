@@ -1,19 +1,10 @@
 /*jslint regexp: true, plusplus: true */
 /*global module */
 
+var conf = require('./conf.js');
 
 (function () {
     "use strict";
-
-    var aliases = {
-        'kentanuts': 'Shuki888',
-        '8862': 'Shuki717',
-        'haimsheli': 'Shuki888',
-        'pookon': 'Shuki888',
-        'dontcare': 'Roman888',
-        'blackmamba': 'Roman888'
-    }
-
 
     var conversionRatio,
         specObj = {
@@ -427,10 +418,10 @@
     function convertAlias(playerName) {
         if (playerName == undefined)
             return playerName;
-        if (aliases[playerName.toLowerCase()] == undefined)
+        if (conf.aliases[playerName.toLowerCase()] == undefined)
             return playerName;
         else
-            return aliases[playerName.toLowerCase()]
+            return conf.aliases[playerName.toLowerCase()]
     }
 
     function actions(actionObj) {
