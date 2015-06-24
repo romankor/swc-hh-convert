@@ -98,13 +98,15 @@ function bufferTillRake(data, filename) {
     if (hands[filename + 'inHand'] == true && data.trim() == "") {
         try {
             var convertedHand = convert.convert(hands[filename], 1) + "\n\n";
-            fs.appendFile(path.join(outputDir, filename), convertedHand, function (err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    //console.log("The file was saved!");
-                }
-            });
+            if (convertedHand.trim().length > 0) {
+                fs.appendFile(path.join(outputDir, filename), convertedHand, function (err) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        //console.log("The file was saved!");
+                    }
+                });
+            }
             //console.log(convertedHand);
             hands[filename + 'inHand'] = false;
         } catch (e) {
