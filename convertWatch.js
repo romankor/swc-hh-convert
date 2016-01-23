@@ -7,7 +7,6 @@ var sys = require("sys");
 var fs = require('fs');
 var path = require('path');
 var swcConvert = require('./swcConvert.js');
-var bovadaConvert = require('./bovadaConvert.js');
 var _ = require('underscore')._;
 var hhDir = process.argv[2];
 var outputDir = process.argv[3];
