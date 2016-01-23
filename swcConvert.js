@@ -330,7 +330,7 @@ var conf = require('./conf.js');
             actions;
         while (i < lines.length) {
             lineType = getLineType(lines[i]);
-
+            var l = lines[i];
             switch (lineType) {
                 case 'handInfo':
                     getInfo(lines[i++], hand, 'handInfo');
@@ -580,10 +580,10 @@ var conf = require('./conf.js');
 
         if (h.gameInfo.gameName === "NL Hold'em") {
             gameType = "No Limit Hold'em";
-        } else if (h.gameInfo.gameName === "Limit Hold'em") {
-            gameType = "Limit Hold'em";
+        } else if (h.gameInfo.gameName === "PL Hold'em") {
+            gameType = "No Limit Hold'em";
         } else if (h.gameInfo.gameName === "PL Omaha") {
-            gameType = "Pot Limit Omaha";
+            gameType = "Pot Limit Omaha Hi";
         } else {
             return false;
         }

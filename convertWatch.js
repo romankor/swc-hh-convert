@@ -6,11 +6,25 @@
 var sys = require("sys");
 var fs = require('fs');
 var path = require('path');
-var convert = require('./swcConvert.js');
+var swcConvert = require('./swcConvert.js');
+var bovadaConvert = require('./bovadaConvert.js');
 var _ = require('underscore')._;
 var hhDir = process.argv[2];
 var outputDir = process.argv[3];
 
+
+var converters = {
+    bovada: {
+        regex: /^Bovada Hand #[0-9]+.*/,
+        converter: swcConvert
+    }
+    ,
+    swc: {
+        regex: /^Hand #[0-9]+-[0-9]+.*/,
+        converter: bovadaConvert
+    }
+
+};
 
 if (!hhDir) {
     sys.puts("You must provide the swc hand history directory as the first argument.");
@@ -36,6 +50,7 @@ function convertFile(fileName) {
         if (error) {
             console.log("Error: ", error);
         } else {
+            hands[fileName] = "";
             var lines = data.split('\n');
             _.each(lines, function (line) {
                 bufferTillRake(line.toString(), fileName)
@@ -89,17 +104,30 @@ fs.watch(hhDir, function (event, filename) {
  * which signifies the end of the hand. Once the whole hand has been buffers
  * it is sent along to another function for processing.
  */
-function bufferTillRake(data, filename) {
-    if (data.substr(0, 6) == "Hand #")
-        hands[filename + 'inHand'] = true;
+function bufferTillRake(data, fileName) {
+    if (data.match(/.*Hand #.*/))
+        hands[fileName + 'inHand'] = true;
 
-    hands[filename] += "\n" + data;
-
-    if (hands[filename + 'inHand'] == true && data.trim() == "") {
+    hands[fileName] += data + '\n';
+    if (hands[fileName + 'inHand'] == true && data.trim() == "") {
         try {
-            var convertedHand = convert.convert(hands[filename], 1) + "\n\n";
+            //var converter = undefined;
+            //for (i in converters) {
+            //    if (converters.hasOwnProperty(i)) {
+            //        match = hands[fileName].trim().match(converters[i].regex);
+            //        if (match) {
+            //            converter = converters[i].converter;
+            //            break;
+            //        }
+            //    }
+            //}
+            //if (converter == undefined) {
+            //    console.log('No converter found for hand + ' + hands[fileName]);
+                //return;
+            //}
+            var convertedHand = swcConvert.convert(hands[fileName], 1) + "\n\n";
             if (convertedHand.trim().length > 0) {
-                fs.appendFile(path.join(outputDir, filename), convertedHand, function (err) {
+                fs.appendFile(path.join(outputDir, fileName), convertedHand, function (err) {
                     if (err) {
                         console.log(err);
                     } else {
@@ -108,12 +136,12 @@ function bufferTillRake(data, filename) {
                 });
             }
             //console.log(convertedHand);
-            hands[filename + 'inHand'] = false;
         } catch (e) {
             console.log(e);
-            console.log('Could not convert hand : \n ' + data);
+            //console.log('Could not convert hand : \n ' + data);
         } finally {
-            hands[filename] = "";
+            hands[fileName + 'inHand'] = false;
+            hands[fileName] = "";
         }
     }
 }
